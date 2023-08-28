@@ -13,6 +13,16 @@ cerbos = "^0.10.0"
 django = "^4.2.4"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+cerbos = {version = "^0.10.0", extras = ["testcontainers"]}
+pytest-django = "^4.5.2"
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "testproject.settings"
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
