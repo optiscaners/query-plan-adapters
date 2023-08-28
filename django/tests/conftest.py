@@ -4,111 +4,76 @@ from contextlib import contextmanager
 import pytest
 from cerbos.engine.v1 import engine_pb2
 from cerbos.sdk.client import CerbosClient
-from cerbos.sdk.container import CerbosContainer
+from cerbos.sdk.container import CerbosContainer as _CerbosContainer
 from cerbos.sdk.grpc.client import CerbosClient as GrpcCerbosClient
 from cerbos.sdk.model import Principal, ResourceDesc
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    create_engine,
-    insert,
-)
-from sqlalchemy.orm import declarative_base, relationship
+from testproject.testapp import models
 
 USER_ROLE = "USER"
 
-Base = declarative_base()
-
-
-class User(Base):
-    __tablename__ = "user"
-
-    id = Column(Integer, primary_key=True)
-
-
-class Resource(Base):
-    __tablename__ = "resource"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(30))
-    # Camel case, as we're being consistent with the attributes created in the base policy files for the shared repo
-    aBool = Column(Boolean)
-    aString = Column(String)
-    aNumber = Column(Integer)
-
-    ownedBy = Column(String, ForeignKey("user.id"))
-    createdBy = Column(String, ForeignKey("user.id"))
-    owner = relationship("User", foreign_keys=[ownedBy])
-    creator = relationship("User", foreign_keys=[createdBy])
-
 
 @pytest.fixture
-def engine():
-    # in-memory database
-    engine = create_engine("sqlite://")
-
-    # generate tables from sqla metadata
-    Base.metadata.create_all(engine)
-
-    # Populate with test data
-    engine.execute(
-        insert(User.__table__),
+def testdata(transactional_db) -> None:
+    models.User.objects.bulk_create(
         [
-            {"id": "1", "name": "user1", "role": "admin"},
-            {"id": "2", "name": "user2", "role": "user"},
-        ],
-    )
-    engine.execute(
-        insert(Resource.__table__),
-        [
-            {
-                "name": "resource1",
-                "aBool": True,
-                "aString": "string",
-                "aNumber": 1,
-                "ownedBy": "1",
-                "createdBy": "1",
-            },
-            {
-                "name": "resource2",
-                "aBool": False,
-                "aString": "amIAString?",
-                "aNumber": 2,
-                "ownedBy": "1",
-                "createdBy": "2",
-            },
-            {
-                "name": "resource3",
-                "aBool": True,
-                "aString": "anotherString",
-                "aNumber": 3,
-                "ownedBy": "2",
-                "createdBy": "2",
-            },
-        ],
+            models.User(id=1, name="user1", role="admin"),
+            models.User(id=2, name="user2", role="user"),
+        ]
     )
 
-    yield engine
+    models.Resource.objects.bulk_create(
+        [
+            models.Resource(
+                name="resource1",
+                aBool=True,
+                aString="string",
+                aNumber=1,
+                ownedBy_id=1,
+                createdBy_id=1,
+            ),
+            models.Resource(
+                name="resource2",
+                aBool=False,
+                aString="amIAString?",
+                aNumber=2,
+                ownedBy_id=1,
+                createdBy_id=2,
+            ),
+            models.Resource(
+                name="resource3",
+                aBool=True,
+                aString="anotherString",
+                aNumber=3,
+                ownedBy_id=2,
+                createdBy_id=2,
+            ),
+        ]
+    )
 
 
 @pytest.fixture
-def conn(engine):
-    with engine.connect() as conn:
-        yield conn
+def user_model():
+    return models.User
 
 
 @pytest.fixture
-def user_table():
-    return User
+def resource_model():
+    return models.Resource
 
 
-@pytest.fixture
-def resource_table():
-    return Resource
+# Workaround for Windows 10 -> localnpipe needs to be translated to localhost
+#  https://github.com/testcontainers/testcontainers-python/issues/108#issuecomment-660371568
+if os.name == "nt":
+    class CerbosContainer(_CerbosContainer):
+        def get_container_host_ip(self) -> str:
+            host = super().get_container_host_ip()
+            if host == "localnpipe":
+                host = "localhost"
+            return host
+
+else:
+    CerbosContainer = _CerbosContainer
 
 
 @contextmanager

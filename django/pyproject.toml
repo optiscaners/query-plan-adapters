@@ -5,7 +5,7 @@ description = "Django adapter for generating queries with Cerbos: an open core, 
 authors = ["Jakob Riebe <jr@estino.de>"]
 license = "Apache-2.0"
 readme = "README.md"
-packages = [{ include = "cerbos_django" }]
+packages = [{ include = "src/cerbos_django" }]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
