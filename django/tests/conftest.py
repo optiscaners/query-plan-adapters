@@ -22,6 +22,23 @@ def testdata(transactional_db) -> None:
         ]
     )
 
+    models.NestedResource.objects.bulk_create(
+        [
+            models.NestedResource(
+                id=1,
+                aString="string1",
+                aNumber=1,
+                aBool=True,
+            ),
+            models.NestedResource(
+                id=2,
+                aString="string2",
+                aNumber=2,
+                aBool=False,
+            ),
+        ]
+    )
+
     models.Resource.objects.bulk_create(
         [
             models.Resource(
@@ -31,6 +48,7 @@ def testdata(transactional_db) -> None:
                 aNumber=1,
                 ownedBy_id=1,
                 createdBy_id=1,
+                nested_id=1,
             ),
             models.Resource(
                 name="resource2",
@@ -39,6 +57,7 @@ def testdata(transactional_db) -> None:
                 aNumber=2,
                 ownedBy_id=1,
                 createdBy_id=2,
+                nested_id=1,
             ),
             models.Resource(
                 name="resource3",
@@ -47,6 +66,7 @@ def testdata(transactional_db) -> None:
                 aNumber=3,
                 ownedBy_id=2,
                 createdBy_id=2,
+                nested_id=2,
             ),
         ]
     )
@@ -60,6 +80,11 @@ def user_model():
 @pytest.fixture
 def resource_model():
     return models.Resource
+
+
+@pytest.fixture
+def nested_resource_model():
+    return models.NestedResource
 
 
 # Workaround for Windows 10 -> localnpipe needs to be translated to localhost

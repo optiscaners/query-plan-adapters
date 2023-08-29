@@ -7,10 +7,7 @@ from cerbos.sdk.model import (
 from django.db.models import Q
 
 from cerbos_django import get_queryset
-from testproject.testapp import models
-
-
-# from sqlalchemy import any_
+from cerbos_django.query import create_lookup_from_attribute
 
 
 def _default_resp_params():
@@ -165,8 +162,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
-        table_mapping = [(user_model, resource_model.ownedBy == user_model.id)]
-        qs = get_queryset(plan, resource_model, attr, table_mapping)
+        qs = get_queryset(plan, resource_model, attr)
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -178,8 +174,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
-        table_mapping = [(user_model, resource_model.ownedBy == user_model.id)]
-        qs = get_queryset(plan, resource_model, attr, table_mapping)
+        qs = get_queryset(plan, resource_model, attr)
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource3"
@@ -191,8 +186,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.createdBy": resource_model.createdBy,
         }
-        table_mapping = [(user_model, resource_model.ownedBy == user_model.id)]
-        qs = get_queryset(plan, resource_model, attr, table_mapping)
+        qs = get_queryset(plan, resource_model, attr)
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource1"
@@ -204,11 +198,75 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.createdBy": resource_model.createdBy,
         }
-        table_mapping = [(user_model, resource_model.ownedBy == user_model.id)]
-        qs = get_queryset(plan, resource_model, attr, table_mapping)
+        qs = get_queryset(plan, resource_model, attr)
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource2", "resource3"}, res))
+
+    def test_relation_equal_nested_explicit_lookup(
+        self, cerbos_client, principal, resource_desc, user_model, resource_model, testdata
+    ):
+        plan = cerbos_client.plan_resources("equal-nested", principal, resource_desc)
+        attr = {
+            "request.resource.attr.nested.aBool": "nested__aBool",
+        }
+        qs = get_queryset(plan, resource_model, attr)
+        res = qs.all()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+    def test_relation_equal_nested_implicit_lookup_through_field_chain(
+        self, cerbos_client, principal, resource_desc, user_model, resource_model, nested_resource_model, testdata
+    ):
+        plan = cerbos_client.plan_resources("equal-nested", principal, resource_desc)
+        attr = {
+            "request.resource.attr.nested.aBool": [
+                resource_model.nested,
+                nested_resource_model.aBool,
+
+            ],
+        }
+        qs = get_queryset(plan, resource_model, attr)
+        res = qs.all()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+
+class TestCreateLookupFromAttribute:
+    def test_deferred_attribute(self, resource_model):
+        lookup = create_lookup_from_attribute(resource_model.name)
+        assert lookup == "name"
+
+    def test_forward_many_to_one_relation(self, resource_model):
+        lookup = create_lookup_from_attribute(resource_model.nested)
+        assert lookup == "nested"
+
+    def test_reverse_many_to_one_relation(self, nested_resource_model):
+        lookup = create_lookup_from_attribute(nested_resource_model.resources)
+        assert lookup == "resources"
+
+    def test_many_to_many_relation(self, resource_model):
+        lookup = create_lookup_from_attribute(resource_model.nested_m2m)
+        assert lookup == "nested_m2m"
+
+    def test_reverse_many_to_many_relation(self, nested_resource_model):
+        lookup = create_lookup_from_attribute(nested_resource_model.resources_m2m)
+        assert lookup == "resources_m2m"
+
+    def test_chained_lookup(self, resource_model, nested_resource_model):
+        lookup = create_lookup_from_attribute([
+            resource_model.nested,
+            nested_resource_model.aBool,
+        ])
+        assert lookup == "nested__aBool"
+
+    def test_triple_chained_lookup(self, user_model, resource_model, nested_resource_model):
+        lookup = create_lookup_from_attribute([
+            user_model.owned_resources,
+            resource_model.nested,
+            nested_resource_model.aBool,
+        ])
+        assert lookup == "owned_resources__nested__aBool"
 
 
 class TestGetQueryOverrides:

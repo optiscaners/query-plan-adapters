@@ -24,3 +24,19 @@ class Resource(models.Model):
 
     ownedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_resources")
     createdBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_resources")
+    nested = models.ForeignKey("NestedResource", on_delete=models.CASCADE, related_name="resources")
+
+    nested_m2m = models.ManyToManyField("NestedResource", related_name="resources_m2m", null=True)
+    nested_o2o = models.OneToOneField(
+        "NestedResource",
+        related_name="resource_o2o",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+
+class NestedResource(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    aString = models.CharField(max_length=30)
+    aNumber = models.IntegerField()
+    aBool = models.BooleanField()

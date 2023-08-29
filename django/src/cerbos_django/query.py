@@ -1,18 +1,35 @@
 from types import MappingProxyType
-from typing import Any, Callable, cast, TypeVar
+from typing import Any, Callable, cast, TypeVar, Iterable, Union
 
 from cerbos.engine.v1 import engine_pb2
 from cerbos.response.v1 import response_pb2
 from cerbos.sdk.model import PlanResourcesFilterKind, PlanResourcesResponse
 from dataclasses_json import DataClassJsonMixin
-from django.db.models import Field, Model as _Model, QuerySet, Q, ForeignKey
-from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+from django.db.models import Model as _Model, QuerySet, Q, Field, ManyToOneRel, ManyToManyRel
+from django.db.models.fields.related_descriptors import (
+    ForwardManyToOneDescriptor,
+    ReverseManyToOneDescriptor,
+    ForwardOneToOneDescriptor,
+    ReverseOneToOneDescriptor,
+    ManyToManyDescriptor,
+)
 from django.db.models.query_utils import DeferredAttribute
 from google.protobuf.json_format import MessageToDict
 
 Model = TypeVar("Model", bound=_Model)
 OperatorFnMap = dict[str, Callable[[str, Any], Q]]
-GenericExpression = Any
+ExplicitAttribute = Union[
+    str,
+    Field,
+    DeferredAttribute,
+    ForwardManyToOneDescriptor,
+    ReverseManyToOneDescriptor,
+    ForwardOneToOneDescriptor,
+    ReverseOneToOneDescriptor,
+    ManyToManyDescriptor,
+]
+ChainedAttribute = Iterable[ExplicitAttribute]
+GenericAttribute = ExplicitAttribute | ChainedAttribute
 
 # We want to make the base dict "immutable", and enforce explicit (optional) overrides on
 # each call to `get_query` (rather than allowing keys in this dict to be overridden, which
@@ -44,11 +61,36 @@ _allow_types = frozenset(
 )
 
 
+def create_lookup_from_attribute(attr: GenericAttribute) -> str:
+    if isinstance(attr, str):
+        lookup = attr
+    elif isinstance(attr, Field):
+        lookup = attr.name
+    elif isinstance(attr, DeferredAttribute):
+        lookup = create_lookup_from_attribute(attr.field)
+    elif isinstance(attr, ForwardManyToOneDescriptor):
+        lookup = create_lookup_from_attribute(attr.field)
+    # ManyToManyDescriptor is a subclass of ReverseManyToOneDescriptor -> needs to be checked first
+    elif isinstance(attr, ManyToManyDescriptor):
+        if attr.reverse:
+            relation: ManyToManyRel = attr.rel
+            lookup = relation.related_name
+        else:
+            lookup = create_lookup_from_attribute(attr.field)
+    elif isinstance(attr, ReverseManyToOneDescriptor):
+        relation: ManyToOneRel = attr.rel
+        lookup = relation.related_name
+    elif isinstance(attr, Iterable):
+        lookup = "__".join([create_lookup_from_attribute(element) for element in attr])
+    else:
+        raise ValueError(f"Attribute {attr} cannot be resolved into a valid lookup.")
+    return lookup
+
+
 def get_queryset(
     query_plan: PlanResourcesResponse | response_pb2.PlanResourcesResponse,
     model: type[Model],
-    attr_map: dict[str, DeferredAttribute],
-    model_mapping: list[tuple[type[Model], GenericExpression]] | None = None,
+    attr_map: dict[str, GenericAttribute],
     operator_override_fns: OperatorFnMap | None = None,
 ) -> QuerySet[Model]:
     if query_plan.filter is None or query_plan.filter.kind in _deny_types:
@@ -56,28 +98,6 @@ def get_queryset(
 
     if query_plan.filter.kind in _allow_types:
         return model.objects.all()
-
-    # Inspect passed columns. If > 1 origin table, assert that the mapping has been defined
-    required_tables = set()
-    for c in attr_map.values():
-        # c is of type Column | InstrumentedAttribute - both have a `table` attribute returning a `Table` type
-        field: Field = c.field
-        if (n := field.model) != model:
-            required_tables.add(n)
-
-    if len(required_tables):
-        if model_mapping is None:
-            raise TypeError(
-                "get_query() missing 1 required positional argument: 'model_mapping'"
-            )
-        for m, _ in model_mapping:
-            required_tables.discard(m)
-        if len(required_tables):
-            raise TypeError(
-                "positional argument 'model_mapping' missing mapping for table(s): '{0}'".format(
-                    "', '".join(required_tables)
-                )
-            )
 
     def get_operator_fn(op: str, c: str, v: Any) -> Q:
         # Check to see if the client has overridden the function
@@ -120,23 +140,15 @@ def get_queryset(
 
         try:
             attribute = attr_map[variable]
-            # Field
-            if isinstance(attribute, DeferredAttribute):
-                lookup = cast(Field, attribute.field).name
-            elif isinstance(attribute, ForwardManyToOneDescriptor):
-                fk_field = cast(ForeignKey, attribute.field)
-                lookup = "__".join([fk_field.name, cast(Field, fk_field.target_field).name])
-            elif isinstance(attribute, Field):
-                lookup = attribute.name
-            else:
-                raise ValueError(f"Attribute {variable} cannot be resolved into a valid lookup.")
         except KeyError:
             raise KeyError(
                 f"Attribute does not exist in the attribute column map: {variable}"
             )
 
+        attribute_lookup = create_lookup_from_attribute(attribute)
+
         # the operator handlers here are the leaf nodes of the recursion
-        return get_operator_fn(operator, lookup, value)
+        return get_operator_fn(operator, attribute_lookup, value)
 
     cond = (
         MessageToDict(query_plan.filter.condition)
@@ -145,11 +157,4 @@ def get_queryset(
     )
 
     query = traverse_and_map_operands(cond)
-    q = model.objects.filter(query)
-
-    # if table_mapping:
-    #     q = q.select_from(table)
-    #     for join_table, predicate in table_mapping:
-    #         q = q.join(join_table, predicate)
-
-    return q
+    return model.objects.filter(query)
