@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from types import MappingProxyType
 from typing import Any, Callable, cast, TypeVar, Iterable, Union
 
@@ -29,7 +31,7 @@ ExplicitAttribute = Union[
     ManyToManyDescriptor,
 ]
 ChainedAttribute = Iterable[ExplicitAttribute]
-GenericAttribute = ExplicitAttribute | ChainedAttribute
+GenericAttribute = Union[ExplicitAttribute, ChainedAttribute]
 
 # We want to make the base dict "immutable", and enforce explicit (optional) overrides on
 # each call to `get_query` (rather than allowing keys in this dict to be overridden, which

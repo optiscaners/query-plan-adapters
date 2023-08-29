@@ -26,6 +26,7 @@ class Resource(models.Model):
     createdBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_resources")
     nested = models.ForeignKey("NestedResource", on_delete=models.CASCADE, related_name="resources")
 
+    # Not used for testing - Only added to verify attribute lookups work
     nested_m2m = models.ManyToManyField("NestedResource", related_name="resources_m2m", null=True)
     nested_o2o = models.OneToOneField(
         "NestedResource",
