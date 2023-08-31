@@ -15,12 +15,14 @@ django = ">=3.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
-cerbos = {version = "^0.10.0", extras = ["testcontainers"]}
+cerbos = {version = ">=0.10.0", extras = ["testcontainers"]}
 pytest-django = "^4.5.2"
 
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "tests.testproject.settings"
+DJANGO_SETTINGS_MODULE = "testproject.settings"
+pythonpath = ["src", "tests"]
+filterwarnings = ["ignore::django.utils.deprecation.RemovedInDjango50Warning"]
 
 
 [build-system]
