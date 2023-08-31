@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from types import MappingProxyType
-from typing import Any, Callable, cast, TypeVar, Iterable, Union
+from typing import Any, Callable, cast, Dict, Type, TypeVar, Iterable, Union, Optional
 
 from cerbos.engine.v1 import engine_pb2
 from cerbos.response.v1 import response_pb2
@@ -19,7 +17,7 @@ from django.db.models.query_utils import DeferredAttribute
 from google.protobuf.json_format import MessageToDict
 
 Model = TypeVar("Model", bound=_Model)
-OperatorFnMap = dict[str, Callable[[str, Any], Q]]
+OperatorFnMap = Dict[str, Callable[[str, Any], Q]]
 ExplicitAttribute = Union[
     str,
     Field,
@@ -90,10 +88,10 @@ def create_lookup_from_attribute(attr: GenericAttribute) -> str:
 
 
 def get_queryset(
-    query_plan: PlanResourcesResponse | response_pb2.PlanResourcesResponse,
-    model: type[Model],
-    attr_map: dict[str, GenericAttribute],
-    operator_override_fns: OperatorFnMap | None = None,
+    query_plan: Union[PlanResourcesResponse, response_pb2.PlanResourcesResponse],
+    model: Type[Model],
+    attr_map: Dict[str, GenericAttribute],
+    operator_override_fns: Optional[OperatorFnMap] = None,
 ) -> QuerySet[Model]:
     if query_plan.filter is None or query_plan.filter.kind in _deny_types:
         return model.objects.none()

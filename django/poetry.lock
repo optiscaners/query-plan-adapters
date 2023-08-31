@@ -2,25 +2,25 @@
 
 [[package]]
 name = "anyio"
-version = "3.7.1"
+version = "4.0.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "anyio-3.7.1-py3-none-any.whl", hash = "sha256:91dee416e570e92c64041bd18b900d1d6fa78dff7048769ce5ac5ddad004fbb5"},
-    {file = "anyio-3.7.1.tar.gz", hash = "sha256:44a3c9aba0f5defa43261a8b3efb97891f2bd7d804e0e1f56419befa1adfc780"},
+    {file = "anyio-4.0.0-py3-none-any.whl", hash = "sha256:cfdb2b588b9fc25ede96d8db56ed50848b0b649dca3dd1df0b11f683bb9e0b5f"},
+    {file = "anyio-4.0.0.tar.gz", hash = "sha256:f7ed51751b2c2add651e5747c891b47e26d2a21be5d32d9311dfe9692f3e5d7a"},
 ]
 
 [package.dependencies]
-exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
+exceptiongroup = {version = ">=1.0.2", markers = "python_version < \"3.11\""}
 idna = ">=2.8"
 sniffio = ">=1.1"
 
 [package.extras]
-doc = ["Sphinx", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-jquery"]
-test = ["anyio[trio]", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
-trio = ["trio (<0.22)"]
+doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)"]
+test = ["anyio[trio]", "coverage[toml] (>=7)", "hypothesis (>=4.0)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
+trio = ["trio (>=0.22)"]
 
 [[package]]
 name = "asgiref"
@@ -71,14 +71,14 @@ tzdata = ["tzdata"]
 
 [[package]]
 name = "cerbos"
-version = "0.10.0"
+version = "0.10.1"
 description = "SDK for working with Cerbos: an open core, language-agnostic, scalable authorization solution"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cerbos-0.10.0-py3-none-any.whl", hash = "sha256:b9a03109010cf780dac05eed758efefd7147c62d0fa8a2a9564c009b5b165af8"},
-    {file = "cerbos-0.10.0.tar.gz", hash = "sha256:fc3f2f58d85e1304abf1012849fb7c6da5659380d82cfecb4cd8ef12930a7f90"},
+    {file = "cerbos-0.10.1-py3-none-any.whl", hash = "sha256:371c8c5c7e6353ac286720a0139a246dbe761cef2b084b06b0e7d6a25a479b54"},
+    {file = "cerbos-0.10.1.tar.gz", hash = "sha256:f92b256dbecb72d26b19960f39737fd15e339fbe82fb0c77c3d311f4165d12b6"},
 ]
 
 [package.dependencies]
@@ -89,6 +89,7 @@ httpx = {version = ">=0.22.0", extras = ["http2"]}
 requests-toolbelt = ">=0.9.1"
 tenacity = ">=8.1.0"
 testcontainers = {version = ">=3.5.3", optional = true, markers = "extra == \"testcontainers\""}
+types-protobuf = ">=4.24.0.1"
 
 [package.extras]
 testcontainers = ["testcontainers (>=3.5.3)"]
@@ -847,6 +848,18 @@ files = [
 ]
 
 [[package]]
+name = "types-protobuf"
+version = "4.24.0.1"
+description = "Typing stubs for protobuf"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-protobuf-4.24.0.1.tar.gz", hash = "sha256:90adea3b693d6a40d8ef075c58fe6b5cc6e01fe1496301a7e6fc70398dcff92e"},
+    {file = "types_protobuf-4.24.0.1-py3-none-any.whl", hash = "sha256:df203a204e4ae97d4cca4c9cf725262579dd7857a19f9e7fc74871ccfa073c01"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.7.1"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -1009,4 +1022,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "9924ceda8da6f469b87600abd94dc502bbef23f031c50fa2975ecec18d4ee333"
+content-hash = "de08d676d05c726a040d4bc4b903bd886aa0c4508c57ed21588927d2d222b1b6"

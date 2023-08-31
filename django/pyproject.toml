@@ -9,8 +9,8 @@ packages = [{ include = "src/cerbos_django" }]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-cerbos = "^0.10.0"
-django = "^4.2.4"
+cerbos = ">=0.10.0"
+django = ">=3.2"
 
 
 [tool.poetry.group.dev.dependencies]
