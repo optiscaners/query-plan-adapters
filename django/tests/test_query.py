@@ -6,7 +6,7 @@ from cerbos.sdk.model import (
 )
 from django.db.models import Q
 
-from cerbos_django import get_queryset
+from cerbos_django import get_query
 from cerbos_django.query import create_lookup_from_attribute
 
 
@@ -24,7 +24,7 @@ class TestGetQuery:
         self, cerbos_client, principal, resource_desc, resource_model, testdata
     ):
         plan = cerbos_client.plan_resources("always-allow", principal, resource_desc)
-        qs = get_queryset(plan, resource_model, {})
+        qs = resource_model.objects.filter(get_query(plan, {}))
         res = qs.all()
         assert len(res) == 3
 
@@ -32,7 +32,7 @@ class TestGetQuery:
         self, cerbos_client, principal, resource_desc, resource_model, testdata
     ):
         plan = cerbos_client.plan_resources("always-deny", principal, resource_desc)
-        qs = get_queryset(plan, resource_model, {})
+        qs = resource_model.objects.filter(get_query(plan, {}))
         res = qs.all()
         assert len(res) == 0
 
@@ -43,7 +43,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aBool": resource_model.aBool,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource3"}, res))
@@ -55,7 +55,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource2", "resource3"}, res))
@@ -66,7 +66,7 @@ class TestGetQuery:
             "request.resource.attr.aBool": resource_model.aBool,
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource3"
@@ -79,7 +79,7 @@ class TestGetQuery:
             "request.resource.attr.aBool": resource_model.aBool,
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -90,7 +90,7 @@ class TestGetQuery:
             "request.resource.attr.aBool": resource_model.aBool,
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 3
 
@@ -102,7 +102,7 @@ class TestGetQuery:
             "request.resource.attr.aBool": resource_model.aBool,
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 0
 
@@ -111,7 +111,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aString": resource_model.aString,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource3"}, res))
@@ -121,7 +121,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aNumber": resource_model.aNumber,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource1"
@@ -131,7 +131,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aNumber": resource_model.aNumber,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource2", "resource3"}, res))
@@ -141,7 +141,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aNumber": resource_model.aNumber,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -151,7 +151,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.aNumber": resource_model.aNumber,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 3
 
@@ -162,7 +162,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -174,7 +174,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource3"
@@ -186,7 +186,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.createdBy": resource_model.createdBy,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource1"
@@ -198,7 +198,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.createdBy": resource_model.createdBy,
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource2", "resource3"}, res))
@@ -210,7 +210,7 @@ class TestGetQuery:
         attr = {
             "request.resource.attr.nested.aBool": "nested__aBool",
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -226,7 +226,7 @@ class TestGetQuery:
 
             ],
         }
-        qs = get_queryset(plan, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -292,7 +292,7 @@ class TestGetQueryOverrides:
         attr = {
             "request.resource.attr.name": resource_model.name,
         }
-        qs = get_queryset(plan_resource_resp, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan_resource_resp, attr))
         res = qs.all()
         assert len(res) == 1
         assert res[0].name == "resource1"
@@ -319,7 +319,7 @@ class TestGetQueryOverrides:
         attr = {
             "request.resource.attr.name": resource_model.name,
         }
-        qs = get_queryset(plan_resource_resp, resource_model, attr)
+        qs = resource_model.objects.filter(get_query(plan_resource_resp, attr))
         res = qs.all()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
@@ -348,7 +348,7 @@ class TestGetQueryOverrides:
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
         with pytest.raises(KeyError) as exc_info:
-            get_queryset(plan_resource_resp, resource_model, attr)
+            get_query(plan_resource_resp, attr)
         assert (
             exc_info.value.args[0]
             == f"Attribute does not exist in the attribute column map: {unknown_attribute}"
@@ -378,7 +378,7 @@ class TestGetQueryOverrides:
             "request.resource.attr.ownedBy": resource_model.ownedBy,
         }
         with pytest.raises(ValueError) as exc_info:
-            get_queryset(plan_resource_resp, resource_model, attr)
+            get_query(plan_resource_resp, attr)
         assert exc_info.value.args[0] == f"Unrecognised operator: {unknown_op}"
 
     def test_in_equals_override(self, resource_model, testdata):
@@ -406,11 +406,12 @@ class TestGetQueryOverrides:
         operator_override_fns = {
             "in": lambda c, v: Q(**{c: v}),
         }
-        qs = get_queryset(
-            plan_resource_resp,
-            resource_model,
-            attr,
-            operator_override_fns=operator_override_fns,
+        qs = resource_model.objects.filter(
+            get_query(
+                plan_resource_resp,
+                attr,
+                operator_override_fns=operator_override_fns,
+            )
         )
         res = qs.all()
         assert len(res) == 1

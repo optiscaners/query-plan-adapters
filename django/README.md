@@ -28,7 +28,7 @@ pip install cerbos_django
 from cerbos.sdk.client import CerbosClient
 from cerbos.sdk.model import Principal, ResourceDesc
 
-from cerbos_django import get_queryset
+from cerbos_django import get_query
 from django.db import models
 
 
@@ -62,7 +62,7 @@ attr_map = {
 }
 
 
-queryset: models.QuerySet[LeaveRequest] = get_queryset(plan, LeaveRequest, attr_map)
+queryset: models.QuerySet[LeaveRequest] = LeaveRequest.objects.filter(get_query(plan, attr_map))
 
 # optionally extend the query
 queryset = queryset.filter(priority__lt=5)
@@ -93,12 +93,13 @@ class LeaveRequest(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
 
-queryset: models.QuerySet[LeaveRequest] = get_queryset(
-    plan,
-    LeaveRequest,
-    {
-        "request.resource.attr.employee.name": [LeaveRequest.employee, Employee.name],  # or "employee__name"
-    },
+queryset: models.QuerySet[LeaveRequest] = LeaveRequest.objects.filter(
+    get_query(
+        plan,
+        {
+            "request.resource.attr.employee.name": [LeaveRequest.employee, Employee.name],  # or "employee__name"
+        },
+    )
 )
 
 ```
@@ -115,18 +116,19 @@ from django.db.models import Q
 
 OperatorFunction = Dict[str, Callable[[str, Any], Q]]
 
-query = get_queryset(
-    plan_resource_resp,
-    SomeModel,
-    attr_map={
-        "request.resource.attr.foo": SomeModel.foo,
-    },
-    # override handler functions in the map below
-    operator_override_fns=cast(
-        OperatorFunction,
-        {
-            "in": lambda c, v: Q(**{c + "__icontains": v}),
-        }
-    ),
+queryset = SomeModel.objects.filter(
+    get_query(
+        plan_resource_resp,
+        attr_map={
+            "request.resource.attr.foo": SomeModel.foo,
+        },
+        # override handler functions in the map below
+        operator_override_fns=cast(
+            OperatorFunction,
+            {
+                "in": lambda c, v: Q(**{c + "__icontains": v}),
+            }
+        ),
+    )
 )
 ```

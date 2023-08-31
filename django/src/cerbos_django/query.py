@@ -1,11 +1,13 @@
+from functools import reduce
+from operator import and_, or_
 from types import MappingProxyType
-from typing import Any, Callable, cast, Dict, Type, TypeVar, Iterable, Union, Optional
+from typing import Any, Callable, cast, Dict, TypeVar, Iterable, Union, Optional
 
 from cerbos.engine.v1 import engine_pb2
 from cerbos.response.v1 import response_pb2
 from cerbos.sdk.model import PlanResourcesFilterKind, PlanResourcesResponse
 from dataclasses_json import DataClassJsonMixin
-from django.db.models import Model as _Model, QuerySet, Q, Field, ManyToOneRel, ManyToManyRel
+from django.db.models import Model as _Model, Q, Field, ManyToOneRel, ManyToManyRel
 from django.db.models.fields.related_descriptors import (
     ForwardManyToOneDescriptor,
     ReverseManyToOneDescriptor,
@@ -87,17 +89,16 @@ def create_lookup_from_attribute(attr: GenericAttribute) -> str:
     return lookup
 
 
-def get_queryset(
+def get_query(
     query_plan: Union[PlanResourcesResponse, response_pb2.PlanResourcesResponse],
-    model: Type[Model],
     attr_map: Dict[str, GenericAttribute],
     operator_override_fns: Optional[OperatorFnMap] = None,
-) -> QuerySet[Model]:
+) -> Q:
     if query_plan.filter is None or query_plan.filter.kind in _deny_types:
-        return model.objects.none()
+        return Q(pk__in=[])  # Doesn't hit DB
 
     if query_plan.filter.kind in _allow_types:
-        return model.objects.all()
+        return Q()
 
     def get_operator_fn(op: str, c: str, v: Any) -> Q:
         # Check to see if the client has overridden the function
@@ -123,14 +124,11 @@ def get_queryset(
         # if `operator` in ["and", "or"], `child_operands` is a nested list of `expression` dicts (handled at the
         # beginning of this closure)
         if operator == "and":
-            return Q(*[traverse_and_map_operands(o) for o in child_operands])
+            return reduce(and_, [traverse_and_map_operands(o) for o in child_operands])
         if operator == "or":
-            op = Q()
-            for o in child_operands:
-                op |= traverse_and_map_operands(o)
-            return op
+            return reduce(or_, [traverse_and_map_operands(o) for o in child_operands])
         if operator == "not":
-            return ~Q(*[traverse_and_map_operands(o) for o in child_operands])
+            return ~(reduce(and_, [traverse_and_map_operands(o) for o in child_operands]))
 
         # otherwise, they are a list[dict] (len==2), in the form: `[{'variable': 'foo'}, {'value': 'bar'}]`
         # The order of the keys `variable` and `value` is not guaranteed.
@@ -156,5 +154,4 @@ def get_queryset(
         else cast(DataClassJsonMixin, query_plan.filter.condition).to_dict()
     )
 
-    query = traverse_and_map_operands(cond)
-    return model.objects.filter(query)
+    return traverse_and_map_operands(cond)
