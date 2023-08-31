@@ -10,7 +10,7 @@ The following conditions are supported: `and`, `or`, `not`, `eq`, `ne`, `lt`, `g
 - Cerbos > v0.16
 - Django >= 3.2
 
-## Usage
+## Installation
 For now:
 ```
 pip install git+ssh://git@github.com/optiscaners/query-plan-adapters@django#subdirectory=django
@@ -20,6 +20,8 @@ In the future:
 ```
 pip install cerbos_django
 ```
+
+## Usage
 
 
 ```python
@@ -77,8 +79,8 @@ print(queryset.query)
 
 ### Related resources
 
-When working with related models (`ForeignKey`, `OneToOneField`, `ManyToManyField`) and nested lookups can be required.
-In this case, the map between cerbos resource attribute and django lookup can be defined:
+When working with related models (`ForeignKey`, `OneToOneField`, `ManyToManyField`) nested lookups can be required.
+In this case, the map between cerbos resource attribute and django lookup can be defined
 * explicitly (`"employee__name"`)
 * or implicitly from chaining the lookup path as a list of model attributes (`[LeaveRequest.employee, Employee.name]`) 
 
