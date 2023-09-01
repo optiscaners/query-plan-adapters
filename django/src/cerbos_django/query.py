@@ -124,11 +124,11 @@ def get_query(
         # if `operator` in ["and", "or"], `child_operands` is a nested list of `expression` dicts (handled at the
         # beginning of this closure)
         if operator == "and":
-            return reduce(and_, [traverse_and_map_operands(o) for o in child_operands])
+            return reduce(and_, (traverse_and_map_operands(o) for o in child_operands))
         if operator == "or":
-            return reduce(or_, [traverse_and_map_operands(o) for o in child_operands])
+            return reduce(or_, (traverse_and_map_operands(o) for o in child_operands))
         if operator == "not":
-            return ~(reduce(and_, [traverse_and_map_operands(o) for o in child_operands]))
+            return ~(reduce(and_, (traverse_and_map_operands(o) for o in child_operands)))
 
         # otherwise, they are a list[dict] (len==2), in the form: `[{'variable': 'foo'}, {'value': 'bar'}]`
         # The order of the keys `variable` and `value` is not guaranteed.

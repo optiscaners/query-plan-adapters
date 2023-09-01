@@ -12,6 +12,7 @@ class User(models.Model):
             ("user", "Normal user"),
         ],
     )
+    related = models.ManyToManyField("NestedResource")
 
 
 class Resource(models.Model):
@@ -25,6 +26,7 @@ class Resource(models.Model):
     ownedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_resources")
     createdBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_resources")
     nested = models.ForeignKey("NestedResource", on_delete=models.CASCADE, related_name="resources")
+    related = models.ManyToManyField("NestedResource")
 
     # Not used for testing - Only added to verify attribute lookups work
     nested_m2m = models.ManyToManyField("NestedResource", related_name="resources_m2m", null=True)
