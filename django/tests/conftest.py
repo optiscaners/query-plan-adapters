@@ -15,61 +15,59 @@ USER_ROLE = "USER"
 
 @pytest.fixture
 def testdata(transactional_db) -> None:
-    models.User.objects.bulk_create(
-        [
-            models.User(id=1, name="user1", role="admin"),
-            models.User(id=2, name="user2", role="user"),
-        ]
-    )
+    user_1 = models.User(id=1, name="user1", role="admin")
+    user_2 = models.User(id=2, name="user2", role="user")
+    models.User.objects.bulk_create([user_1, user_2])
 
-    models.NestedResource.objects.bulk_create(
-        [
-            models.NestedResource(
-                id=1,
-                aString="string1",
-                aNumber=1,
-                aBool=True,
-            ),
-            models.NestedResource(
-                id=2,
-                aString="string2",
-                aNumber=2,
-                aBool=False,
-            ),
-        ]
+    nested_1 = models.NestedResource(
+        id=1,
+        aString="string1",
+        aNumber=1,
+        aBool=True,
     )
+    nested_2 = models.NestedResource(
+        id=2,
+        aString="string2",
+        aNumber=2,
+        aBool=False,
+    )
+    models.NestedResource.objects.bulk_create([nested_1, nested_2])
 
-    models.Resource.objects.bulk_create(
-        [
-            models.Resource(
-                name="resource1",
-                aBool=True,
-                aString="string",
-                aNumber=1,
-                ownedBy_id=1,
-                createdBy_id=1,
-                nested_id=1,
-            ),
-            models.Resource(
-                name="resource2",
-                aBool=False,
-                aString="amIAString?",
-                aNumber=2,
-                ownedBy_id=1,
-                createdBy_id=2,
-                nested_id=1,
-            ),
-            models.Resource(
-                name="resource3",
-                aBool=True,
-                aString="anotherString",
-                aNumber=3,
-                ownedBy_id=2,
-                createdBy_id=2,
-                nested_id=2,
-            ),
-        ]
+    resource_1 = models.Resource(
+        name="resource1",
+        aBool=True,
+        aString="string",
+        aNumber=1,
+        ownedBy_id=1,
+        createdBy_id=1,
+        nested_id=1,
     )
+    resource_2 = models.Resource(
+        name="resource2",
+        aBool=False,
+        aString="amIAString?",
+        aNumber=2,
+        ownedBy_id=1,
+        createdBy_id=2,
+        nested_id=1,
+    )
+    resource_3 = models.Resource(
+        name="resource3",
+        aBool=True,
+        aString="anotherString",
+        aNumber=3,
+        ownedBy_id=2,
+        createdBy_id=2,
+        nested_id=2,
+    )
+    models.Resource.objects.bulk_create([resource_1, resource_2, resource_3])
+
+    user_1.related.add(nested_1)
+    user_2.related.add(nested_2)
+
+    resource_1.related.add(nested_1)
+    resource_2.related.add(nested_1, nested_2)
+    resource_3.related.add(nested_2)
 
 
 @pytest.fixture

@@ -114,6 +114,29 @@ def get_query(
 
         raise ValueError(f"Unrecognised operator: {op}")
 
+    def map_exists_operator(child_operands: list[dict]) -> Q:
+        d = {k: v for o in child_operands for k, v in o.items()}
+        variable = d["variable"]
+        sub_expression = d["expression"]
+
+        operator = sub_expression["operator"]
+        if operator != "lambda":
+            raise NotImplementedError
+        operands = sub_expression["operands"]
+
+        d2 = {k: v for o in operands for k, v in o.items()}
+        lambda_variable = d2["variable"]
+        lambda_expression = d2["expression"]
+
+        d3 = {k: v for o in lambda_expression["operands"] for k, v in o.items()}
+        if d3["variable"] != lambda_variable:
+            raise ValueError("'lambda' expression requires variable names to match.")
+        d3["variable"] = variable
+        lambda_expression["operands"] = [{key: value} for key, value in d3.items()]
+        sub_query = traverse_and_map_operands(lambda_expression)
+
+        return sub_query
+
     def traverse_and_map_operands(operand: dict) -> Q:
         if exp := operand.get("expression"):
             return traverse_and_map_operands(exp)
@@ -129,6 +152,8 @@ def get_query(
             return reduce(or_, (traverse_and_map_operands(o) for o in child_operands))
         if operator == "not":
             return ~(reduce(and_, (traverse_and_map_operands(o) for o in child_operands)))
+        if operator == "exists":
+            return map_exists_operator(child_operands)
 
         # otherwise, they are a list[dict] (len==2), in the form: `[{'variable': 'foo'}, {'value': 'bar'}]`
         # The order of the keys `variable` and `value` is not guaranteed.

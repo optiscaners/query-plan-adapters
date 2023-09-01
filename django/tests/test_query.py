@@ -1,10 +1,15 @@
 import pytest
+from cerbos.engine.v1 import engine_pb2
+from cerbos.sdk.grpc.client import CerbosClient as GrpcCerbosClient
 from cerbos.sdk.model import (
     PlanResourcesFilter,
     PlanResourcesFilterKind,
     PlanResourcesResponse,
 )
+from cerbos.sdk.model import Principal
 from django.db.models import Q
+from google.protobuf.json_format import ParseDict
+from google.protobuf.struct_pb2 import Value
 
 from cerbos_django import get_query
 from cerbos_django.query import create_lookup_from_attribute
@@ -228,6 +233,105 @@ class TestGetQuery:
         }
         qs = resource_model.objects.filter(get_query(plan, attr))
         res = qs.all()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+    def test_exists(
+        self, cerbos_client, principal, resource_desc, user_model, resource_model, testdata
+    ):
+        plan = cerbos_client.plan_resources("exists", principal, resource_desc)
+        attr = {
+            "request.resource.attr.related": resource_model.related,
+        }
+        query = get_query(plan, attr)
+        qs = resource_model.objects.filter(query)
+        res = qs.all()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+    def test_common_relations_list_and_list(
+        self,
+        cerbos_client,
+        resource_desc,
+        resource_model,
+        testdata,
+    ):
+        attr = {"related": ["1"]}
+        if isinstance(cerbos_client, GrpcCerbosClient):
+            attr = {key: ParseDict(value, Value()) for key, value in attr.items()}
+        principal_cls = (
+            engine_pb2.Principal
+            if isinstance(cerbos_client, GrpcCerbosClient)
+            else Principal
+        )
+        principal = principal_cls(id="1", roles={"USER"}, attr=attr)
+
+        plan = cerbos_client.plan_resources("common-relations", principal, resource_desc)
+        attr = {
+            "request.resource.attr.related": resource_model.related,
+        }
+        query = get_query(plan, attr)
+        qs = resource_model.objects.filter(query)
+        res = qs.distinct()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+    def test_common_relations_list_and_map(
+        self,
+        cerbos_client,
+        resource_desc,
+        resource_model,
+        testdata,
+    ):
+        attr = {"related": {"1": {"aString": "string"}}}
+        if isinstance(cerbos_client, GrpcCerbosClient):
+            attr = {key: ParseDict(value, Value()) for key, value in attr.items()}
+        principal_cls = (
+            engine_pb2.Principal
+            if isinstance(cerbos_client, GrpcCerbosClient)
+            else Principal
+        )
+        principal = principal_cls(id="1", roles={"USER"}, attr=attr)
+
+        plan = cerbos_client.plan_resources("common-relations", principal, resource_desc)
+        attr = {
+            "request.resource.attr.related": resource_model.related,
+        }
+        query = get_query(plan, attr)
+        qs = resource_model.objects.filter(query)
+        res = qs.distinct()
+        assert len(res) == 2
+        assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
+
+    def test_common_relations_nested_condition(
+        self,
+        cerbos_client,
+        resource_desc,
+        resource_model,
+        testdata,
+    ):
+        attr = {
+            "related": {
+                "1": {"aString": "string"},
+                "2": {"aString": "anotherString"},
+            }
+        }
+        if isinstance(cerbos_client, GrpcCerbosClient):
+            attr = {key: ParseDict(value, Value()) for key, value in attr.items()}
+        principal_cls = (
+            engine_pb2.Principal
+            if isinstance(cerbos_client, GrpcCerbosClient)
+            else Principal
+        )
+        principal = principal_cls(id="1", roles={"USER"}, attr=attr)
+
+        plan = cerbos_client.plan_resources("common-relations-nested-condition", principal, resource_desc)
+        attr = {
+            "request.resource.attr.related": resource_model.related,
+        }
+        query = get_query(plan, attr)
+        qs = resource_model.objects.filter(query)
+        res = qs.distinct()
         assert len(res) == 2
         assert all(map(lambda x: x.name in {"resource1", "resource2"}, res))
 

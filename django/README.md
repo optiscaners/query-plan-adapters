@@ -4,7 +4,7 @@
 
 An adapter library that takes a [Cerbos](https://cerbos.dev) Query Plan ([PlanResources API](https://docs.cerbos.dev/cerbos/latest/api/index.html#resources-query-plan)) response and converts it into a [django](https://djangoproject.com) `QuerySet`. This is designed to work alongside a project using the [Cerbos Python SDK](https://github.com/cerbos/cerbos-sdk-python).
 
-The following conditions are supported: `and`, `or`, `not`, `eq`, `ne`, `lt`, `gt`, `le` (`lte`), `ge` (`gte`) and `in`.
+The following conditions are supported: `and`, `or`, `not`, `eq`, `ne`, `lt`, `gt`, `le` (`lte`), `ge` (`gte`), `in` and `exists`.
 
 ## Requirements
 - Cerbos > v0.16
@@ -102,6 +102,28 @@ queryset: models.QuerySet[LeaveRequest] = LeaveRequest.objects.filter(
     )
 )
 
+```
+
+### Resource and principal with common relation
+
+When working with related models that are also related to the principal, it can be necessary to determine if they share the same related objects.
+This can be done by using the `in` or `exists` operator. If the resource attribute is a single element use `in`, if it's a collection of elements use `exists`. 
+
+Be careful to formulate the conditions such that the resource attributes are put on the left side. 
+That way, the operations requiring principal attributes are simplified before constructing the AST, which prevents complex operators (like `set-field`, `get-field`, `struct`) from being used which are not supported by this package.
+This is also considered a [best-practice](https://docs.cerbos.dev/cerbos/latest/policies/best_practices#_map_of_relations) when working with relations.
+
+
+```yaml
+# Only resources that are owned by the principal 
+condition:
+  match:
+    expr: R.id in P.attr.relations.filter(x, P.attr.relations[x] == "owner")
+
+# Only resources that are part of a group, where the principal is also an owner (two unrelated many-to-many fields)
+condition:
+  match:
+    expr: R.attr.relatedGroups.exists(x, x in P.attr.relatedGroups.filter(y, P.attr.relatedGroups[y].role == "owner")) 
 ```
 
 

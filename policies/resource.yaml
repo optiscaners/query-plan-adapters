@@ -183,3 +183,30 @@ resourcePolicy:
       condition:
         match:
           expr: request.resource.attr.nested.aBool == true
+
+    - actions:
+        - "exists"
+      effect: EFFECT_ALLOW
+      roles:
+        - USER
+      condition:
+        match:
+          expr: request.resource.attr.related.exists(x, x in [1, 10])
+
+    - actions:
+        - "common-relations"
+      effect: EFFECT_ALLOW
+      roles:
+        - USER
+      condition:
+        match:
+          expr: request.resource.attr.related.exists(x, x in request.principal.attr.related)
+
+    - actions:
+        - "common-relations-nested-condition"
+      effect: EFFECT_ALLOW
+      roles:
+        - USER
+      condition:
+        match:
+          expr: request.resource.attr.related.exists(relation, relation in request.principal.attr.related.filter(x, request.principal.attr.related[x].aString == "string"))
