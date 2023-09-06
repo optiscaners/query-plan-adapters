@@ -366,11 +366,11 @@ class TestCreateLookupFromAttribute:
 
     def test_triple_chained_lookup(self, user_model, resource_model, nested_resource_model):
         lookup = create_lookup_from_attribute([
-            user_model.owned_resources,
+            user_model.ownedResources,
             resource_model.nested,
             nested_resource_model.aBool,
         ])
-        assert lookup == "owned_resources__nested__aBool"
+        assert lookup == "ownedResources__nested__aBool"
 
 
 class TestGetQueryOverrides:

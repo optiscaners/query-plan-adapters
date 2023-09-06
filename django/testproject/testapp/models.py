@@ -23,8 +23,8 @@ class Resource(models.Model):
     aString = models.TextField()
     aNumber = models.IntegerField()
 
-    ownedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_resources")
-    createdBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_resources")
+    ownedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ownedResources")
+    createdBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name="createdResources")
     nested = models.ForeignKey("NestedResource", on_delete=models.CASCADE, related_name="resources")
     related = models.ManyToManyField("NestedResource")
 
