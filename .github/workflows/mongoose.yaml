@@ -17,11 +17,11 @@ jobs:
     strategy:
       matrix:
         cerbos-version: ["latest"]
-        mongodb-version: ["4.4", "5.0", "6.0"]
-        node-version: ["18"]
+        mongodb-version: ["4.4", "5.0", "6.0", "7.0"]
+        node-version: ["18", "20"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Cerbos
         uses: cerbos/cerbos-setup-action@v1
@@ -34,7 +34,7 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Test using Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
